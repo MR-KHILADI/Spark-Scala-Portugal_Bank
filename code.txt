@@ -1,0 +1,28 @@
+spark2-shell --packages com.databricks:spark-csv_2.10:1.4.0 
+
+val x=spark.read.format("csv").option("inferSchema","true").option("header","true").load("/user/agrawal768_gmail/project1/Bank_full.csv")
+val totCount=x.count()
+val sub_count=x.filter($"y"==="yes").count().toDouble
+val successRate=(sub_count/totCount)*100
+val FailureRate=100 -(sub_count/totCount)*100
+x.select(mean($"age"),min($"age"),max($"age")).show()
+x.createOrReplaceTempView("bankdata")
+spark.sql("select percentile(balance,0.5) as medianBal from bankdata").show()
+spark.sql("select avg(balance) as avgBal from bankdata").show()
+
+
+x.groupBy("age","y").count().show
+x.groupBy("y").agg(avg("age")).show
+x.groupBy("marital","y").count().show
+
+def AgeToCategory=udf((age:Int)=>
+age match{
+case n if n<30 =>"young"
+case n if n>65 =>"old"
+case _ => "mid"
+})
+
+val newx=x.withColumn("agecategory",AgeToCategory(x("age"))) 
+newx.show
+
+newx.groupBy("agecategory","y","age").count().show()   
